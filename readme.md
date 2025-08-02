@@ -1,289 +1,188 @@
-🚗 Ride Sharing API
-A Django REST Framework based Ride Sharing API with JWT authentication. It supports registering users as drivers or riders, creating and accepting ride requests, live ride tracking, and ride simulations.
 
-📦 Features
-JWT-based authentication (djangorestframework-simplejwt)
+# Ride Sharing API
 
-Role-based access (driver or rider)
+This is a basic ride sharing API built with Django Rest Framework that allows users to register as riders or drivers, log in, create ride requests, and simulate ride progression.
 
-Nearby driver matching using the Haversine formula
+## Features
 
-Simulated rides with threading
+- User Registration and Login (JWT Auth)
+- Location Update for Drivers
+- Ride Request Creation by Riders
+- Proximity-based Driver Matching (Haversine Formula)
+- Ride Status Updates with Simulation
+- Candidate Driver Selection and Ride Acceptance Flow
 
-Live location updates for rides and users
+## Setup
 
-🧰 Setup Instructions
-bash
-Copy
-Edit
+1. Clone the repo:
+```bash
+git clone https://github.com/govardhanob/ride-test.git
+cd ride-test
+```
+
+2. Create a virtual environment and activate it:
+```bash
+python -m venv env
+source env/bin/activate  # or env\Scripts\activate on Windows
+```
+
+3. Install dependencies:
+```bash
 pip install -r requirements.txt
-python manage.py makemigrations
-python manage.py migrate
+```
+
+4. Run the server:
+```bash
 python manage.py runserver
-🔐 Authentication
-🔑 JWT Login
-Endpoint: POST /api/token/
-Body:
+```
 
-json
-Copy
-Edit
+## Environment Setup
+
+Make sure to create a `.env` file (if you're using one).
+
+## API Endpoints
+
+### 1. Register
+
+```http
+POST /api/register/
+```
+
+#### Example (For Rider or Driver)
+```json
 {
-  "username": "john",
-  "password": "secret"
+  "username": "rider1",
+  "email": "rider1@example.com",
+  "password": "yourpassword",
+  "is_driver": false
 }
-Response:
-
-json
-Copy
-Edit
+```
+```json
 {
-  "refresh": "token",
-  "access": "token"
+  "username": "driver1",
+  "email": "driver1@example.com",
+  "password": "yourpassword",
+  "is_driver": true
 }
-👤 User Registration
-📌 POST /api/register/
-Register a new user (either driver or rider).
+```
 
-Request Body:
+> Note: Latitude and longitude are not passed during registration.
 
-json
-Copy
-Edit
+---
+
+### 2. Login
+
+```http
+POST /api/login/
+```
+
+#### Example
+```json
 {
-  "username": "john",
-  "password": "secret123",
-  "is_driver": false,
-  "latitude": 10.0,
-  "longitude": 76.3
+  "username": "rider1",
+  "password": "yourpassword",
+  "latitude": 10.54321,
+  "longitude": 76.987654
 }
-Response:
+```
 
-json
-Copy
-Edit
+Returns access and refresh tokens.
+
+---
+
+### 3. Update Driver Location after login
+
+```http
+PATCH /api/register/{id}/update_location/
+Headers: Authorization: Bearer <your_token>
+```
+
+#### Example Body:
+```json
 {
-  "id": 1,
-  "username": "john",
-  "is_driver": false,
-  "latitude": 10.0,
-  "longitude": 76.3
+  "latitude": 10.54321,
+  "longitude": 76.987654
 }
-📍 PATCH /api/register/{id}/update_location/
-Update user’s current location (authenticated).
+```
 
-Request Header:
+---
 
-makefile
-Copy
-Edit
-Authorization: Bearer <access_token>
-Body:
+### 4. Create Ride Request (Rider only)
 
-json
-Copy
-Edit
+```http
+POST /api/rides/
+Headers: Authorization: Bearer <rider_token>
+```
+
+#### Example Body:
+```json
 {
-  "latitude": 9.95,
-  "longitude": 76.25
+  "pickup_latitude": 10.543,
+  "pickup_longitude": 76.987,
+  "dropoff_latitude": 10.545,
+  "dropoff_longitude": 76.989
 }
-Response:
+```
 
-json
-Copy
-Edit
-{
-  "status": "User location updated"
-}
-🚕 Ride API
-📌 POST /api/ride/
-Create a ride request (only rider can create).
+Returns ride details with a list of candidate drivers (maximum of 3 drivers) based on proximity.
 
-Request Header:
+**Candidate Driver Selection:**  
+- Uses the Haversine formula to calculate distance from pickup location.
+- Filters top 3 nearest available drivers.
 
-makefile
-Copy
-Edit
-Authorization: Bearer <access_token>
-Body:
+---
 
-json
-Copy
-Edit
-{
-  "pickup_latitude": 9.96,
-  "pickup_longitude": 76.26,
-  "dropoff_latitude": 9.98,
-  "dropoff_longitude": 76.28
-}
-Logic:
+### 5. Accept Ride (Driver only)
 
-Filters drivers within 5 km using haversine().
+```http
+PATCH /api/rides/{ride_id}/accept/
+Headers: Authorization: Bearer <driver_token>
+```
 
-Assigns top 3 closest drivers to the ride.
+Assigns the driver to the ride if they are in the candidate list.
 
-Response:
+---
 
-json
-Copy
-Edit
-{
-  "id": 1,
-  "rider": 2,
-  "pickup_lat": 9.96,
-  "pickup_lng": 76.26,
-  "dropoff_lat": 9.98,
-  "dropoff_lng": 76.28,
-  "status": "pending",
-  "candidate_drivers": [1, 3, 4]
-}
-📌 PATCH /api/ride/{id}/accept_ride/
-Driver accepts a ride.
+### 6. List All Rides (Anyone)
 
-Request Header:
+```http
+GET /api/rides/
+Headers: Authorization: Bearer <token>
+```
 
-makefile
-Copy
-Edit
-Authorization: Bearer <access_token>
-Response:
+---
 
-json
-Copy
-Edit
-{
-  "status": "Ride accepted by driver_username"
-}
-📌 PATCH /api/ride/{id}/update_location/
-Update the real-time location of the ride.
+### 7. Get Single Ride
 
-Body:
+```http
+GET /api/rides/{id}/
+Headers: Authorization: Bearer <token>
+```
 
-json
-Copy
-Edit
-{
-  "current_lat": 9.97,
-  "current_lng": 76.27
-}
-Response:
+---
 
-json
-Copy
-Edit
-{
-  "status": "Ride location updated"
-}
-📌 PATCH /api/ride/{id}/update_status/
-Update the ride status: pending, accepted, started, completed.
+### 8. Update Ride Status (Driver only)
 
-Request:
+```http
+PATCH /api/rides/{id}/
+Headers: Authorization: Bearer <driver_token>
+```
 
-json
-Copy
-Edit
+#### Example Body:
+```json
 {
   "status": "started"
 }
-Logic:
+```
 
-On "started": starts simulation in a separate thread.
+**Simulation Logic:**  
+- When the ride status is updated to `"started"`, a background thread begins simulating the ride.
+- The rides current location is updated at intervals to reflect real-time movement.
+- The ride status changes from `"started"`  → `"completed"` .
+- Once completed, the thread stops itself.
 
-On "completed": stops simulation.
+---
 
-Response:
+## Author
 
-json
-Copy
-Edit
-{
-  "status": "Ride status updated to started"
-}
-🧠 Utility Functions (in utils.py)
-🧭 haversine(lat1, lon1, lat2, lon2)
-Calculates the distance (in km) between two coordinates using the Haversine formula.
-
-🎮 simulate_ride(ride_id)
-Simulates a live ride:
-
-Periodically updates ride's current location.
-
-Stops simulation when status changes to completed.
-
-Global dictionary used:
-
-python
-Copy
-Edit
-SIMULATION_ACTIVE = {}  # ride_id: bool
-🔑 Permissions
-Endpoint	Role	Auth Required
-POST /api/register/	Anyone	❌
-POST /api/token/	Anyone	❌
-PATCH /register/{id}/update_location/	Authenticated	✅
-POST /ride/	Rider only	✅
-PATCH /ride/{id}/accept_ride/	Driver only	✅
-PATCH /ride/{id}/update_location/	Any ride user	✅
-PATCH /ride/{id}/update_status/	Any ride user	✅
-
-🔍 Sample Users
-Rider
-json
-Copy
-Edit
-{
-  "username": "rider1",
-  "password": "pass123",
-  "is_driver": false,
-  "latitude": 10.01,
-  "longitude": 76.33
-}
-Driver
-json
-Copy
-Edit
-{
-  "username": "driver1",
-  "password": "pass123",
-  "is_driver": true,
-  "latitude": 10.02,
-  "longitude": 76.34
-}
-🧪 Testing Checklist
-Test Case	Expected Result
-Rider creates ride	3 nearby drivers assigned
-Driver accepts ride	Ride assigned to that driver
-Start ride	Simulation begins
-Complete ride	Simulation ends
-Unauthorized user creates ride	403 error
-Rider tries to accept ride	403 error
-
-🧱 Models (Simplified)
-🚶‍♂️ User
-username
-
-password
-
-is_driver
-
-latitude
-
-longitude
-
-🚕 Ride
-rider: FK(User)
-
-driver: FK(User)
-
-pickup_lat, pickup_lng
-
-dropoff_lat, dropoff_lng
-
-current_lat, current_lng
-
-status: pending, accepted, started, completed
-
-candidate_drivers: M2M(User)
-
-
-
+Govardhan
