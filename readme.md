@@ -14,6 +14,7 @@ This is a basic ride sharing API built with Django Rest Framework that allows us
 
 ## Setup
 
+<<<<<<< HEAD
 1. Clone the repo:
 ```bash
 git clone https://github.com/govardhanob/ride-test.git
@@ -28,6 +29,10 @@ source env/bin/activate  # or env\Scripts\activate on Windows
 
 3. Install dependencies:
 ```bash
+=======
+🧰 Setup Instructions
+
+>>>>>>> 1a17e435768e5e33981697a746ee5c557cb6fb23
 pip install -r requirements.txt
 ```
 
