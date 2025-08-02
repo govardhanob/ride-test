@@ -13,9 +13,7 @@ Simulated rides with threading
 Live location updates for rides and users
 
 🧰 Setup Instructions
-bash
-Copy
-Edit
+
 pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
